@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.env
+.env.local
+.env.*.local
+dist
+out
+coverage
+.DS_Store
+*.log
+.pnpm-debug.log*
+.vscode
+.idea
+.eslintignore
+playwright-report
+test-results

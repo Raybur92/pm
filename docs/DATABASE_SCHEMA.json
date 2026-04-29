@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "description": "SQLite schema for the Project Management MVP. Supports multiple users, one board per user, multiple columns and cards per board, and AI conversation history per board.",
+  "tables": {
+    "users": {
+      "description": "Registered users. MVP uses hardcoded credentials; table exists for future multi-user support.",
+      "columns": {
+        "id": { "type": "INTEGER", "primary_key": true, "autoincrement": true },
+        "username": { "type": "TEXT", "nullable": false, "unique": true },
+        "password_hash": { "type": "TEXT", "nullable": false },
+        "created_at": { "type": "DATETIME", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+      },
+      "indexes": [
+        { "name": "idx_users_username", "columns": ["username"], "unique": true }
+      ]
+    },
+    "boards": {
+      "description": "One board per user for MVP. title defaults to 'My Board'.",
+      "columns": {
+        "id": { "type": "INTEGER", "primary_key": true, "autoincrement": true },
+        "user_id": { "type": "INTEGER", "nullable": false, "references": "users(id)", "on_delete": "CASCADE" },
+        "title": { "type": "TEXT", "nullable": false, "default": "My Board" },
+        "created_at": { "type": "DATETIME", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+        "updated_at": { "type": "DATETIME", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+      },
+      "indexes": [
+        { "name": "idx_boards_user_id", "columns": ["user_id"] }
+      ]
+    },
+    "columns": {
+      "description": "Ordered columns within a board. position is 0-indexed integer; 5 fixed columns seeded on board creation.",
+      "columns": {
+        "id": { "type": "INTEGER", "primary_key": true, "autoincrement": true },
+        "board_id": { "type": "INTEGER", "nullable": false, "references": "boards(id)", "on_delete": "CASCADE" },
+        "title": { "type": "TEXT", "nullable": false },
+        "position": { "type": "INTEGER", "nullable": false },
+        "created_at": { "type": "DATETIME", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+        "updated_at": { "type": "DATETIME", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+      },
+      "indexes": [
+        { "name": "idx_columns_board_id", "columns": ["board_id"] },
+        { "name": "idx_columns_board_position", "columns": ["board_id", "position"], "unique": true }
+      ]
+    },
+    "cards": {
+      "description": "Cards within a column. position is 0-indexed integer within the column.",
+      "columns": {
+        "id": { "type": "INTEGER", "primary_key": true, "autoincrement": true },
+        "column_id": { "type": "INTEGER", "nullable": false, "references": "columns(id)", "on_delete": "CASCADE" },
+        "title": { "type": "TEXT", "nullable": false },
+        "details": { "type": "TEXT", "nullable": false, "default": "" },
+        "position": { "type": "INTEGER", "nullable": false },
+        "created_at": { "type": "DATETIME", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+        "updated_at": { "type": "DATETIME", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+      },
+      "indexes": [
+        { "name": "idx_cards_column_id", "columns": ["column_id"] },
+        { "name": "idx_cards_column_position", "columns": ["column_id", "position"], "unique": true }
+      ]
+    },
+    "ai_messages": {
+      "description": "Conversation history for the AI chat sidebar, scoped to a board.",
+      "columns": {
+        "id": { "type": "INTEGER", "primary_key": true, "autoincrement": true },
+        "board_id": { "type": "INTEGER", "nullable": false, "references": "boards(id)", "on_delete": "CASCADE" },
+        "role": { "type": "TEXT", "nullable": false, "check": "role IN ('user', 'assistant')" },
+        "content": { "type": "TEXT", "nullable": false },
+        "created_at": { "type": "DATETIME", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+      },
+      "indexes": [
+        { "name": "idx_ai_messages_board_id", "columns": ["board_id"] }
+      ]
+    }
+  },
+  "relationships": [
+    { "from": "boards.user_id",      "to": "users.id",    "cardinality": "many-to-one", "on_delete": "CASCADE" },
+    { "from": "columns.board_id",    "to": "boards.id",   "cardinality": "many-to-one", "on_delete": "CASCADE" },
+    { "from": "cards.column_id",     "to": "columns.id",  "cardinality": "many-to-one", "on_delete": "CASCADE" },
+    { "from": "ai_messages.board_id","to": "boards.id",   "cardinality": "many-to-one", "on_delete": "CASCADE" }
+  ],
+  "design_decisions": {
+    "cascade_deletes": "Deleting a user cascades to boards → columns → cards and ai_messages. Keeps the DB consistent without application-level cleanup.",
+    "position_as_integer": "Card and column order stored as 0-indexed integers. On move, affected rows are shifted in a single UPDATE. No fractional/gap strategy needed at MVP scale.",
+    "fixed_columns": "MVP boards are seeded with 5 fixed columns (Backlog, Discovery, In Progress, Review, Done) on board creation. Columns cannot be added or removed, only renamed.",
+    "updated_at_management": "updated_at is set by the application layer on every write — no SQLite triggers needed for MVP. SQLAlchemy event listeners will handle it.",
+    "password_storage": "password_hash stores bcrypt hashes. MVP seed inserts the hash for 'password' directly.",
+    "no_soft_deletes": "Hard deletes only. Cascade rules handle referential integrity.",
+    "foreign_key_enforcement": "PRAGMA foreign_keys = ON must be set per connection; SQLAlchemy event listener will emit it on connect."
+  },
+  "queries": {
+    "get_board": "Single JOIN across boards + columns + cards ordered by column.position, card.position — no N+1.",
+    "move_card_same_column": "Shift positions of cards between old and new index, then set card's position.",
+    "move_card_different_column": "Decrement positions in source column above removed card; insert at target position and increment positions in target column.",
+    "get_conversation_history": "SELECT * FROM ai_messages WHERE board_id = ? ORDER BY created_at ASC — straightforward."
+  },
+  "seed_data": {
+    "users": [{ "username": "user", "password_hash": "<bcrypt hash of 'password'>" }],
+    "boards": [{ "user_id": 1, "title": "My Board" }],
+    "columns": [
+      { "board_id": 1, "title": "Backlog",     "position": 0 },
+      { "board_id": 1, "title": "Discovery",   "position": 1 },
+      { "board_id": 1, "title": "In Progress", "position": 2 },
+      { "board_id": 1, "title": "Review",      "position": 3 },
+      { "board_id": 1, "title": "Done",        "position": 4 }
+    ]
+  }
+}

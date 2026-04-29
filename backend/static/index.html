@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management MVP</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #209dd7 0%, #753991 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(3, 33, 71, 0.2);
+            max-width: 500px;
+        }
+        h1 {
+            color: #032147;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+        }
+        p {
+            color: #888888;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        .status-box {
+            background: #f5f5f5;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            text-align: left;
+            font-family: "Monaco", "Courier New", monospace;
+            font-size: 0.9rem;
+        }
+        .status-item {
+            margin: 0.5rem 0;
+            color: #032147;
+        }
+        .status-ok {
+            color: #209dd7;
+            font-weight: bold;
+        }
+        .button {
+            display: inline-block;
+            background: #753991;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: brightness 0.2s;
+        }
+        .button:hover {
+            filter: brightness(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Hello World</h1>
+        <p>Project Management MVP is running!</p>
+        <div class="status-box">
+            <div class="status-item"><span class="status-ok">✓</span> Backend: OK</div>
+            <div class="status-item"><span class="status-ok">✓</span> Static files: OK</div>
+            <div class="status-item">Frontend: Coming in Part 3</div>
+        </div>
+        <p id="health-status">Checking health endpoint...</p>
+        <a href="/docs" class="button">API Docs</a>
+    </div>
+
+    <script>
+        async function checkHealth() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                document.getElementById('health-status').innerHTML = `<strong>✓ Health endpoint:</strong> ${JSON.stringify(data)}`;
+            } catch (error) {
+                document.getElementById('health-status').innerHTML = `<strong>✗ Health check failed:</strong> ${error.message}`;
+            }
+        }
+        checkHealth();
+    </script>
+</body>
+</html>

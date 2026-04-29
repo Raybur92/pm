@@ -1,6 +1,21 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { KanbanBoard } from "@/components/KanbanBoard";
+
+// Mock next/navigation
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+  }),
+}));
+
+// Mock auth context
+vi.mock("@/lib/auth", () => ({
+  useAuth: () => ({
+    logout: vi.fn(),
+  }),
+}));
 
 const getFirstColumn = () => screen.getAllByTestId(/column-/i)[0];
 
