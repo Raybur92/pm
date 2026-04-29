@@ -26,8 +26,8 @@ COPY .env.example .env
 # Copy built frontend from Stage 1
 COPY --from=frontend-builder /app/frontend/out ./static
 
-# Install dependencies with uv
-RUN uv pip install --system --no-cache-dir fastapi uvicorn sqlalchemy python-dotenv openai pydantic pydantic-settings
+# Install dependencies with uv from pyproject.toml
+RUN uv pip install --system --no-cache-dir .
 
 # Expose port
 EXPOSE 8000

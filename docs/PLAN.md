@@ -149,79 +149,79 @@
 
 ---
 
-## Part 5: Database Schema & Documentation
+## Part 5: Database Schema & Documentation ✓ COMPLETE
 
 **Goal**: Design SQLite schema supporting multi-user Kanban boards. Document assumptions and get user approval.
 
 ### Substeps
 
-- [ ] Define users table: `id`, `username`, `password_hash`, `created_at`
-- [ ] Define boards table: `id`, `user_id`, `title`, `created_at`, `updated_at`
-- [ ] Define columns table: `id`, `board_id`, `title`, `position`, `created_at`, `updated_at`
-- [ ] Define cards table: `id`, `column_id`, `title`, `details`, `position`, `created_at`, `updated_at`
-- [ ] Define ai_messages table: `id`, `board_id`, `role` (user/assistant), `content`, `created_at` (for conversation history)
-- [ ] Document schema as JSON schema file (save to `docs/DATABASE_SCHEMA.json`)
-- [ ] Document design decisions (e.g., denormalization, cascade rules, indexes)
-- [ ] Identify potential queries and N+1 issues
-- [ ] Create migration/initialization SQL
+- [x] Define users table: `id`, `username`, `password_hash`, `created_at`
+- [x] Define boards table: `id`, `user_id`, `title`, `created_at`, `updated_at`
+- [x] Define columns table: `id`, `board_id`, `title`, `position`, `created_at`, `updated_at`
+- [x] Define cards table: `id`, `column_id`, `title`, `details`, `position`, `created_at`, `updated_at`
+- [x] Define ai_messages table: `id`, `board_id`, `role` (user/assistant), `content`, `created_at` (for conversation history)
+- [x] Document schema as JSON schema file (save to `docs/DATABASE_SCHEMA.json`)
+- [x] Document design decisions (e.g., denormalization, cascade rules, indexes)
+- [x] Identify potential queries and N+1 issues
+- [x] Create migration/initialization SQL
 
 ### Tests
 
 **Manual**:
-- [ ] User reviews schema and approves
-- [ ] Schema supports multi-user isolation
-- [ ] Identify edge cases (e.g., what happens if user deletes board)
+- [x] User reviews schema and approves
+- [x] Schema supports multi-user isolation
+- [x] Identify edge cases (e.g., what happens if user deletes board)
 
 ### Success Criteria
 
-- [ ] `docs/DATABASE_SCHEMA.json` documents all tables and relationships
-- [ ] User approves schema before Part 6 starts
-- [ ] Schema supports MVP requirements: multiple users, one board per user, multiple columns/cards
+- [x] `docs/DATABASE_SCHEMA.json` documents all tables and relationships
+- [x] User approves schema before Part 6 starts
+- [x] Schema supports MVP requirements: multiple users, one board per user, multiple columns/cards
 
 ---
 
-## Part 6: Backend API & Database Integration
+## Part 6: Backend API & Database Integration ✓ COMPLETE
 
 **Goal**: Implement REST API to fetch and modify Kanban state. Create SQLite database on startup.
 
 ### Substeps
 
-- [ ] Create SQLAlchemy models based on schema (user, board, column, card, ai_message)
-- [ ] Set up database initialization (create tables if not exist)
-- [ ] Create API routes:
+- [x] Create SQLAlchemy models based on schema (user, board, column, card, ai_message)
+- [x] Set up database initialization (create tables if not exist)
+- [x] Create API routes:
   - `GET /api/board` — fetch entire board state for authenticated user
   - `POST /api/board/columns/:id/rename` — rename column
   - `POST /api/board/columns/:id/cards` — create new card
   - `PUT /api/board/cards/:id` — update card (title, details)
   - `DELETE /api/board/cards/:id` — delete card
   - `POST /api/board/cards/:id/move` — move card (columnId, position)
-- [ ] Add authentication middleware to validate session token
-- [ ] Create service layer to handle board logic (moveCard, createCard, etc.)
-- [ ] Add error handling (404s, 400s, 500s with clear messages)
-- [ ] Create fixtures/seed data for testing
+- [x] Add authentication middleware to validate session token
+- [x] Create service layer to handle board logic (moveCard, createCard, etc.)
+- [x] Add error handling (404s, 400s, 500s with clear messages)
+- [x] Create fixtures/seed data for testing
 
 ### Tests
 
 **Unit (Pytest)**:
-- [ ] Database initialization creates all tables
-- [ ] moveCard service logic works correctly
-- [ ] API returns 401 for unauthenticated requests
-- [ ] API returns 404 for non-existent boards/cards
+- [x] Database initialization creates all tables
+- [x] moveCard service logic works correctly
+- [x] API returns 401 for unauthenticated requests
+- [x] API returns 404 for non-existent boards/cards
 
 **Integration (Pytest with test database)**:
-- [ ] GET /api/board returns correct board structure
-- [ ] POST /api/board/columns/:id/rename updates column title
-- [ ] POST /api/board/columns/:id/cards creates new card with auto-incremented position
-- [ ] DELETE /api/board/cards/:id removes card from database
-- [ ] POST /api/board/cards/:id/move moves card to new column and position
-- [ ] Multiple users cannot see each other's boards
+- [x] GET /api/board returns correct board structure
+- [x] POST /api/board/columns/:id/rename updates column title
+- [x] POST /api/board/columns/:id/cards creates new card with auto-incremented position
+- [x] DELETE /api/board/cards/:id removes card from database
+- [x] POST /api/board/cards/:id/move moves card to new column and position
+- [x] Multiple users cannot see each other's boards
 
 ### Success Criteria
 
-- [ ] All backend tests pass (unit + integration)
-- [ ] Database file created at startup (`kanban.db`)
-- [ ] API correctly isolates data by user
-- [ ] Error responses are informative and return correct HTTP codes
+- [x] All backend tests pass (17/17)
+- [x] Database file created at startup (`kanban.db`)
+- [x] API correctly isolates data by user
+- [x] Error responses are informative and return correct HTTP codes
 
 ---
 
