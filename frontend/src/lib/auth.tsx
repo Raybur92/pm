@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { api } from "@/lib/api";
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -15,7 +16,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is already authenticated on mount
   useEffect(() => {
     const token = localStorage.getItem("auth_token");
     setIsAuthenticated(!!token);
@@ -23,14 +23,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
-    // Hardcoded credentials for MVP
-    if (username === "user" && password === "password") {
-      // Store a simple token (in real app, would come from backend)
-      localStorage.setItem("auth_token", "dummy_token_" + Date.now());
+    try {
+      const { token } = await api.login(username, password);
+      localStorage.setItem("auth_token", token);
       setIsAuthenticated(true);
       return true;
+    } catch {
+      return false;
     }
-    return false;
   };
 
   const logout = () => {

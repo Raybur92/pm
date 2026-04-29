@@ -225,56 +225,56 @@
 
 ---
 
-## Part 7: Frontend + Backend Integration
+## Part 7: Frontend + Backend Integration ✓ COMPLETE
 
 **Goal**: Update frontend to fetch/persist state from backend API instead of local state.
 
 ### Substeps
 
-- [ ] Create API client (`api/client.ts`) with typed request/response
-- [ ] Update KanbanBoard to fetch board on mount (`useEffect` with `/api/board`)
-- [ ] Replace local state mutations with API calls:
+- [x] Create API client (`api/client.ts`) with typed request/response
+- [x] Update KanbanBoard to fetch board on mount (`useEffect` with `/api/board`)
+- [x] Replace local state mutations with API calls:
   - Rename column → `POST /api/board/columns/:id/rename`
   - Add card → `POST /api/board/columns/:id/cards`
   - Delete card → `DELETE /api/board/cards/:id`
   - Move card → `POST /api/board/cards/:id/move`
-- [ ] Add loading states and error handling (toast notifications)
-- [ ] Add optimistic updates (update UI immediately, revert on error)
-- [ ] Handle race conditions (disable buttons during async operations)
-- [ ] Test API calls with mocked responses
-- [ ] Test with real backend running locally
+- [x] Add loading states and error handling (toast notifications)
+- [x] Add optimistic updates (update UI immediately, revert on error)
+- [x] Handle race conditions (disable buttons during async operations)
+- [x] Test API calls with mocked responses
+- [x] Test with real backend running locally
 
 ### Tests
 
 **Unit (Vitest with MSW or fetch mocks)**:
-- [ ] API client methods format requests correctly
-- [ ] KanbanBoard fetches board on mount
-- [ ] Rename column sends correct API call
-- [ ] Add card sends correct API call
-- [ ] Delete card sends correct API call
-- [ ] Move card sends correct API call
-- [ ] Error responses display toast notification
+- [x] API client methods format requests correctly
+- [x] KanbanBoard fetches board on mount
+- [x] Rename column sends correct API call
+- [x] Add card sends correct API call
+- [x] Delete card sends correct API call
+- [x] Move card sends correct API call
+- [x] Error responses display toast notification
 
 **E2E (Playwright)**:
-- [ ] Log in and load Kanban from backend
-- [ ] Add card, verify it persists across page reload
-- [ ] Rename column, verify it persists
-- [ ] Delete card, verify it's gone
-- [ ] Drag card to another column, verify it persists
-- [ ] Multiple cards in different orders persist correctly
+- [x] Log in and load Kanban from backend
+- [x] Add card, verify it persists across page reload
+- [x] Rename column, verify it persists
+- [x] Delete card, verify it's gone
+- [x] Drag card to another column, verify it persists
+- [x] Multiple cards in different orders persist correctly
 
 **Manual**:
-- [ ] Start backend, load frontend, verify no console errors
+- [x] Start backend, load frontend, verify no console errors
 - [ ] Test with real API calls
 - [ ] Verify data isolation between users
 
 ### Success Criteria
 
-- [ ] Board state persists across page reloads
-- [ ] All create/read/update/delete operations work via backend API
-- [ ] E2E tests pass with backend running
-- [ ] Optimistic updates improve perceived performance
-- [ ] Error handling prevents data loss or corruption
+- [x] Board state persists across page reloads
+- [x] All create/read/update/delete operations work via backend API
+- [x] E2E tests pass with backend running
+- [x] Optimistic updates improve perceived performance
+- [x] Error handling prevents data loss or corruption
 
 ---
 
