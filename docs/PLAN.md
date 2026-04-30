@@ -231,13 +231,16 @@
 
 ### Substeps
 
-- [x] Create API client (`api/client.ts`) with typed request/response
+- [x] Create API client (`frontend/src/lib/api.ts`) with typed request/response
 - [x] Update KanbanBoard to fetch board on mount (`useEffect` with `/api/board`)
 - [x] Replace local state mutations with API calls:
   - Rename column → `POST /api/board/columns/:id/rename`
   - Add card → `POST /api/board/columns/:id/cards`
+  - Edit card title/details → `PUT /api/board/cards/:id`
   - Delete card → `DELETE /api/board/cards/:id`
   - Move card → `POST /api/board/cards/:id/move`
+- [x] Add inline card editing UI (Edit/Save/Cancel with optimistic update)
+- [x] Fix drag-and-drop column highlight for columns that contain cards (track `overItemId` in KanbanBoard via `onDragOver`; highlight if over column droppable OR over any card within that column)
 - [x] Add loading states and error handling (toast notifications)
 - [x] Add optimistic updates (update UI immediately, revert on error)
 - [x] Handle race conditions (disable buttons during async operations)
@@ -260,6 +263,7 @@
 - [x] Add card, verify it persists across page reload
 - [x] Rename column, verify it persists
 - [x] Delete card, verify it's gone
+- [x] Edit card title, verify it persists
 - [x] Drag card to another column, verify it persists
 - [x] Multiple cards in different orders persist correctly
 
@@ -455,3 +459,31 @@
 - **Commit Points**: Finish each part before moving to next; validate success criteria
 - **Documentation**: Keep README minimal; API docs in code comments or Markdown
 - **Error Handling**: Graceful degradation; clear user-facing error messages
+
+---
+
+## Design Decisions (Implementation Notes)
+
+Key decisions made during implementation, recorded here for future reference.
+
+### Authentication
+- Session tokens stored in `localStorage` (not httpOnly cookies) — SPA with static export can't set httpOnly cookies server-side; acceptable for MVP
+- Backend uses an in-memory `dict[str, int]` (token → user_id) as the session store; tokens are reset on server restart, which is fine for MVP
+- Passwords hashed with `bcrypt` (4 rounds salt); seed user `"user"` / `"password"` is created on first startup if no users exist
+
+### Backend
+- SQLAlchemy model for `columns` table is named `KanbanColumn` (not `Column`) to avoid collision with SQLAlchemy's `Column` construct
+- Python 3.9 compatibility: used `Optional[str]` from `typing` instead of `str | None` union syntax throughout; `from __future__ import annotations` was avoided because it breaks Pydantic v2 `get_type_hints()` on Python 3.9
+- `pyproject.toml` requires `[tool.hatch.build.targets.wheel] packages = ["app"]` so hatchling can locate the package during `uv pip install .` in Docker
+- `CardOut` response schema includes `column_id` field (needed by the move-card endpoint to return the card's new location)
+- `PRAGMA foreign_keys = ON` is set on every new SQLite connection via a SQLAlchemy event listener to enforce cascade deletes
+
+### Testing
+- SQLite in-memory databases for pytest use `StaticPool` from `sqlalchemy.pool` — without it each connection gets a fresh empty database, causing all queries after setup to fail on a different connection
+- Vitest globals (`describe`, `it`, `expect`) require `/// <reference types="vitest/globals" />` in the type declaration file, not just `/// <reference types="vitest" />`
+
+### Frontend / DnD
+- Column droppable IDs use a `"col-N"` string prefix (`toColumnDndId(id)`) to prevent collision between numeric column IDs (1–5) and numeric card IDs (1+) in @dnd-kit — without this, `moveCard` cannot tell whether `overId` refers to a column or a card
+- `moveCard(columns, activeCardId, overId: number | string)`: `typeof overId === "string"` means the pointer is over the empty-column droppable; a number means it's over another card
+- Column highlight during drag: `useDroppable`'s `isOver` only fires when the pointer is directly over the droppable element. For columns that contain cards, the `useSortable` items intercept the pointer. Fixed by tracking `overItemId` in `KanbanBoard` via `onDragOver` and passing `isHighlighted` (overId matches column droppable OR any card in that column) as a prop to `KanbanColumn`
+- `next.config.ts` rewrites (`/api/*` → `http://localhost:8000/api/*`) are applied only when `NODE_ENV !== "production"` so the static export build is unaffected
