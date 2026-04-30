@@ -1,7 +1,8 @@
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.database import AiMessage, Card, KanbanColumn
@@ -195,7 +196,9 @@ def test_chat_saves_conversation_history(client, auth_headers, test_engine):
         client.post("/api/chat", json={"message": "what is on the board?"}, headers=auth_headers)
 
     with Session(test_engine) as session:
-        msgs = session.query(AiMessage).filter_by(board_id=board_id).all()
+        msgs = session.scalars(
+            select(AiMessage).where(AiMessage.board_id == board_id).order_by(AiMessage.created_at)
+        ).all()
         assert len(msgs) == 2
         assert msgs[0].role == "user"
         assert msgs[0].content == "what is on the board?"
@@ -203,29 +206,31 @@ def test_chat_saves_conversation_history(client, auth_headers, test_engine):
         assert msgs[1].content == "Got it."
 
 
-def test_chat_multiple_turns(client, auth_headers, test_engine):
+def test_chat_multiple_turns_loads_history_from_db(client, auth_headers, test_engine):
     board_data = _get_board(client, auth_headers)
     board_id = board_data["id"]
 
     with _patch_ai(_make_ai_raw("Turn 1.")):
         client.post("/api/chat", json={"message": "turn 1"}, headers=auth_headers)
 
-    with _patch_ai(_make_ai_raw("Turn 2.")):
-        resp = client.post(
-            "/api/chat",
-            json={
-                "message": "turn 2",
-                "conversation_history": [
-                    {"role": "user", "content": "turn 1"},
-                    {"role": "assistant", "content": "Turn 1."},
-                ],
-            },
-            headers=auth_headers,
-        )
+    # On the second request the server should load turn 1 from the DB automatically.
+    # Capture the messages actually sent to the AI to verify history was included.
+    with patch("app.routers.chat.call_ai_with_retry", return_value=_make_ai_raw("Turn 2.")) as mock_ai:
+        resp = client.post("/api/chat", json={"message": "turn 2"}, headers=auth_headers)
 
     assert resp.status_code == 200
+
+    # The messages list passed to the AI: system + 2 history msgs + current user msg = 4
+    call_messages = mock_ai.call_args[0][2]
+    roles = [m["role"] for m in call_messages]
+    assert roles == ["system", "user", "assistant", "user"]
+    assert call_messages[1]["content"] == "turn 1"
+    assert call_messages[2]["content"] == "Turn 1."
+
     with Session(test_engine) as session:
-        msgs = session.query(AiMessage).filter_by(board_id=board_id).all()
+        msgs = session.scalars(
+            select(AiMessage).where(AiMessage.board_id == board_id).order_by(AiMessage.created_at)
+        ).all()
         assert len(msgs) == 4
 
 

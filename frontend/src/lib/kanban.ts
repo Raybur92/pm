@@ -1,3 +1,5 @@
+import type { ApiBoard } from "@/lib/api";
+
 export type Card = {
   id: number;
   title: string;
@@ -18,6 +20,22 @@ export type BoardData = {
 
 // Columns use "col-{id}" as DnD droppable IDs to avoid collisions with numeric card IDs
 export const toColumnDndId = (columnId: number) => `col-${columnId}`;
+
+export function apiBoardToBoardData(apiBoard: ApiBoard): BoardData {
+  const columns = apiBoard.columns.map((col) => ({
+    id: col.id,
+    title: col.title,
+    position: col.position,
+    cardIds: col.cards.map((c) => c.id),
+  }));
+  const cards: BoardData["cards"] = {};
+  for (const col of apiBoard.columns) {
+    for (const card of col.cards) {
+      cards[card.id] = { id: card.id, title: card.title, details: card.details };
+    }
+  }
+  return { columns, cards };
+}
 
 export const moveCard = (
   columns: Column[],

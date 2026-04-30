@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.models.database import Board, Card, KanbanColumn
@@ -41,7 +41,7 @@ def rename_column(session: Session, column_id: int, title: str, board_id: int) -
 
 def create_card(session: Session, column_id: int, title: str, details: str, board_id: int) -> Card:
     _get_column(session, column_id, board_id)
-    count = session.query(Card).filter(Card.column_id == column_id).count()
+    count = session.scalar(select(func.count()).select_from(Card).where(Card.column_id == column_id))
     card = Card(column_id=column_id, title=title, details=details or "", position=count)
     session.add(card)
     session.commit()
@@ -72,10 +72,11 @@ def delete_card(session: Session, card_id: int, board_id: int) -> None:
     old_column_id = card.column_id
     session.delete(card)
     session.flush()
-    session.query(Card).filter(
-        Card.column_id == old_column_id,
-        Card.position > old_position,
-    ).update({"position": Card.position - 1})
+    session.execute(
+        update(Card)
+        .where(Card.column_id == old_column_id, Card.position > old_position)
+        .values(position=Card.position - 1)
+    )
     session.commit()
 
 
@@ -96,29 +97,31 @@ def move_card(
         if src_pos == target_position:
             return card
         if src_pos < target_position:
-            session.query(Card).filter(
-                Card.column_id == src_col_id,
-                Card.position > src_pos,
-                Card.position <= target_position,
-            ).update({"position": Card.position - 1})
+            session.execute(
+                update(Card)
+                .where(Card.column_id == src_col_id, Card.position > src_pos, Card.position <= target_position)
+                .values(position=Card.position - 1)
+            )
         else:
-            session.query(Card).filter(
-                Card.column_id == src_col_id,
-                Card.position >= target_position,
-                Card.position < src_pos,
-            ).update({"position": Card.position + 1})
+            session.execute(
+                update(Card)
+                .where(Card.column_id == src_col_id, Card.position >= target_position, Card.position < src_pos)
+                .values(position=Card.position + 1)
+            )
         card.position = target_position
     else:
-        session.query(Card).filter(
-            Card.column_id == src_col_id,
-            Card.position > src_pos,
-        ).update({"position": Card.position - 1})
-        target_count = session.query(Card).filter(Card.column_id == target_column_id).count()
+        session.execute(
+            update(Card)
+            .where(Card.column_id == src_col_id, Card.position > src_pos)
+            .values(position=Card.position - 1)
+        )
+        target_count = session.scalar(select(func.count()).select_from(Card).where(Card.column_id == target_column_id))
         target_position = min(target_position, target_count)
-        session.query(Card).filter(
-            Card.column_id == target_column_id,
-            Card.position >= target_position,
-        ).update({"position": Card.position + 1})
+        session.execute(
+            update(Card)
+            .where(Card.column_id == target_column_id, Card.position >= target_position)
+            .values(position=Card.position + 1)
+        )
         card.column_id = target_column_id
         card.position = target_position
 

@@ -1,5 +1,4 @@
 import json
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from openai import AuthenticationError
@@ -14,6 +13,7 @@ from app.utils.chat import (
     SYSTEM_PROMPT_TEMPLATE,
     apply_updates,
     call_ai_with_retry,
+    load_history,
     save_messages,
     serialize_board,
 )
@@ -21,14 +21,8 @@ from app.utils.chat import (
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
 
-class MessageHistory(BaseModel):
-    role: str
-    content: str
-
-
 class ChatRequest(BaseModel):
     message: str
-    conversation_history: List[MessageHistory] = []
 
 
 class ChatResponse(BaseModel):
@@ -47,9 +41,7 @@ def chat(
     system_prompt = SYSTEM_PROMPT_TEMPLATE.format(board_json=json.dumps(board_json, indent=2))
 
     messages = [{"role": "system", "content": system_prompt}]
-    for msg in body.conversation_history:
-        if msg.role in ("user", "assistant"):
-            messages.append({"role": msg.role, "content": msg.content})
+    messages.extend(load_history(session, board.id))
     messages.append({"role": "user", "content": body.message})
 
     try:

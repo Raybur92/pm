@@ -94,13 +94,10 @@ export const api = {
     });
   },
 
-  chat(
-    message: string,
-    history: Array<{ role: string; content: string }>,
-  ): Promise<ChatResponse> {
+  chat(message: string): Promise<ChatResponse> {
     return request("/api/chat", {
       method: "POST",
-      body: JSON.stringify({ message, conversation_history: history }),
+      body: JSON.stringify({ message }),
     });
   },
 };

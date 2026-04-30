@@ -16,25 +16,9 @@ import {
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
 import { ChatSidebar } from "@/components/ChatSidebar";
-import { moveCard, toColumnDndId, type BoardData } from "@/lib/kanban";
+import { apiBoardToBoardData, moveCard, toColumnDndId, type BoardData } from "@/lib/kanban";
 import { useAuth } from "@/lib/auth";
-import { api, type ApiBoard } from "@/lib/api";
-
-function apiBoardToBoardData(apiBoard: ApiBoard): BoardData {
-  const columns = apiBoard.columns.map((col) => ({
-    id: col.id,
-    title: col.title,
-    position: col.position,
-    cardIds: col.cards.map((c) => c.id),
-  }));
-  const cards: BoardData["cards"] = {};
-  for (const col of apiBoard.columns) {
-    for (const card of col.cards) {
-      cards[card.id] = { id: card.id, title: card.title, details: card.details };
-    }
-  }
-  return { columns, cards };
-}
+import { api } from "@/lib/api";
 
 export const KanbanBoard = () => {
   const router = useRouter();
@@ -72,8 +56,9 @@ export const KanbanBoard = () => {
     setActiveCardId(null);
     setOverItemId(null);
     if (!over || active.id === over.id || !board) return;
+    if (typeof active.id !== "number") return;
 
-    const cardId = active.id as number;
+    const cardId = active.id;
     // over.id is either a numeric card id or a "col-N" string column id
     const overId = over.id as number | string;
 

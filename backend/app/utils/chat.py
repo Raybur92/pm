@@ -3,6 +3,7 @@ import time
 from typing import Any
 
 from openai import OpenAI
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.database import AiMessage, Board
@@ -54,6 +55,8 @@ def serialize_board(board: Board) -> dict:
 
 
 def call_ai_with_retry(client: OpenAI, model: str, messages: list, max_retries: int = 2) -> str:
+    from openai import AuthenticationError, RateLimitError
+
     last_error: Exception = RuntimeError("No attempts made")
     for attempt in range(max_retries + 1):
         try:
@@ -63,7 +66,9 @@ def call_ai_with_retry(client: OpenAI, model: str, messages: list, max_retries: 
                 response_format={"type": "json_object"},
             )
             return completion.choices[0].message.content.strip()
-        except Exception as e:
+        except AuthenticationError:
+            raise
+        except (RateLimitError, Exception) as e:
             last_error = e
             if attempt < max_retries:
                 time.sleep(1)
@@ -140,6 +145,15 @@ def apply_updates(session: Session, updates: list, board: Board) -> list:
             pass
 
     return applied
+
+
+def load_history(session: Session, board_id: int) -> list[dict]:
+    msgs = session.scalars(
+        select(AiMessage)
+        .where(AiMessage.board_id == board_id)
+        .order_by(AiMessage.created_at)
+    ).all()
+    return [{"role": msg.role, "content": msg.content} for msg in msgs]
 
 
 def save_messages(session: Session, board_id: int, user_message: str, ai_response: str) -> None:

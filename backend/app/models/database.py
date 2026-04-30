@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sqlalchemy import (
@@ -10,6 +10,8 @@ from sqlalchemy import (
     Text,
     create_engine,
     event,
+    func,
+    select,
 )
 from sqlalchemy.orm import DeclarativeBase, Session, relationship
 
@@ -36,7 +38,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, nullable=False, unique=True)
     password_hash = Column(String, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     boards = relationship("Board", back_populates="user", cascade="all, delete-orphan")
 
@@ -47,8 +49,8 @@ class Board(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     title = Column(String, nullable=False, default="My Board")
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="boards")
     columns = relationship(
@@ -67,8 +69,8 @@ class KanbanColumn(Base):
     board_id = Column(Integer, ForeignKey("boards.id", ondelete="CASCADE"), nullable=False)
     title = Column(String, nullable=False)
     position = Column(Integer, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     board = relationship("Board", back_populates="columns")
     cards = relationship(
@@ -87,8 +89,8 @@ class Card(Base):
     title = Column(String, nullable=False)
     details = Column(Text, nullable=False, default="")
     position = Column(Integer, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     column = relationship("KanbanColumn", back_populates="cards")
 
@@ -100,7 +102,7 @@ class AiMessage(Base):
     board_id = Column(Integer, ForeignKey("boards.id", ondelete="CASCADE"), nullable=False)
     role = Column(String, nullable=False)
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
 
     board = relationship("Board", back_populates="ai_messages")
 
@@ -113,7 +115,7 @@ def get_session():
 def init_db():
     Base.metadata.create_all(engine)
     with Session(engine) as session:
-        if session.query(User).count() == 0:
+        if session.scalar(select(func.count()).select_from(User)) == 0:
             import bcrypt
             pw_hash = bcrypt.hashpw(b"password", bcrypt.gensalt()).decode()
             user = User(username="user", password_hash=pw_hash)

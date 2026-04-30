@@ -61,6 +61,12 @@ export const KanbanColumn = ({
                 onRename(column.id, trimmed);
               }
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setLocalTitle(column.title);
+                e.currentTarget.blur();
+              }
+            }}
             className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-[var(--navy-dark)] outline-none"
             aria-label="Column title"
           />

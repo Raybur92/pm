@@ -35,7 +35,7 @@ export const ChatSidebar = ({ onBoardUpdated }: ChatSidebarProps) => {
     setError(null);
 
     try {
-      const result = await api.chat(text, messages);
+      const result = await api.chat(text);
       setMessages((prev) => [...prev, { role: "assistant", content: result.response }]);
       if (result.applied_updates.length > 0) {
         onBoardUpdated();
