@@ -17,13 +17,21 @@ export const KanbanCard = ({ card, onDelete, onUpdate }: KanbanCardProps) => {
     useSortable({ id: card.id });
   const [editing, setEditing] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(false);
+  const [isActive, setIsActive] = useState(false);
   const [title, setTitle] = useState(card.title);
   const [details, setDetails] = useState(card.details);
+
+  // treat touch-primary devices as always-active so buttons stay visible
+  const [isTouchDevice] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(hover: none)").matches
+  );
 
   useEffect(() => {
     setTitle(card.title);
     setDetails(card.details);
   }, [card.title, card.details]);
+
+  const showActions = pendingDelete || isActive || isTouchDevice;
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -50,9 +58,16 @@ export const KanbanCard = ({ card, onDelete, onUpdate }: KanbanCardProps) => {
       className={clsx(
         "group rounded-2xl border border-transparent bg-white px-4 py-4 shadow-[0_12px_24px_rgba(3,33,71,0.08)]",
         "transition-all duration-150",
+        editing ? "cursor-default" : isDragging ? "cursor-grabbing" : "cursor-grab",
         isDragging && "opacity-60 shadow-[0_18px_32px_rgba(3,33,71,0.16)]"
       )}
       data-testid={`card-${card.id}`}
+      onMouseEnter={() => { if (!editing) setIsActive(true); }}
+      onMouseLeave={() => setIsActive(false)}
+      onFocus={() => { if (!editing) setIsActive(true); }}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsActive(false);
+      }}
       {...attributes}
       {...(editing ? {} : listeners)}
     >
@@ -91,58 +106,73 @@ export const KanbanCard = ({ card, onDelete, onUpdate }: KanbanCardProps) => {
           </div>
         </div>
       ) : (
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h4 className="font-display text-base font-semibold text-[var(--navy-dark)]">
-              {card.title}
-            </h4>
-            <p className="mt-2 text-sm leading-6 text-[var(--gray-text)]">
-              {card.details}
-            </p>
-          </div>
-          <div className={clsx(
-            "flex flex-col gap-1 shrink-0 transition-opacity duration-150",
-            pendingDelete ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100"
-          )}>
-            {pendingDelete ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => onDelete(card.id)}
-                  className="rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white transition hover:bg-red-600"
-                  aria-label={`Confirm delete ${card.title}`}
-                >
-                  Confirm
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPendingDelete(false)}
-                  className="rounded-full border border-[var(--stroke)] px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:text-[var(--navy-dark)]"
-                  aria-label="Cancel delete"
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setEditing(true)}
-                  className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
-                  aria-label={`Edit ${card.title}`}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPendingDelete(true)}
-                  className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
-                  aria-label={`Delete ${card.title}`}
-                >
-                  Remove
-                </button>
-              </>
-            )}
+        <div className="flex items-start gap-2">
+          <span
+            aria-hidden="true"
+            className="mt-1 flex-shrink-0 select-none text-xs leading-none text-[var(--gray-text)] opacity-0 group-hover:opacity-100 transition-opacity duration-150 [@media(hover:none)]:hidden"
+          >
+            ⠿
+          </span>
+          <div className="flex flex-1 items-start justify-between gap-2">
+            <div>
+              <h4 className="font-display text-base font-semibold text-[var(--navy-dark)]">
+                {card.title}
+              </h4>
+              <p className="mt-2 text-sm leading-6 text-[var(--gray-text)]">
+                {card.details}
+              </p>
+            </div>
+            <div
+              aria-hidden={showActions ? undefined : true}
+              className={clsx(
+                "flex flex-col gap-1 shrink-0 transition-opacity duration-150",
+                showActions ? "opacity-100" : "opacity-0"
+              )}
+            >
+              {pendingDelete ? (
+                <>
+                  <button
+                    type="button"
+                    tabIndex={showActions ? 0 : -1}
+                    onClick={() => onDelete(card.id)}
+                    className="rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white transition hover:bg-red-600"
+                    aria-label={`Confirm delete ${card.title}`}
+                  >
+                    Confirm
+                  </button>
+                  <button
+                    type="button"
+                    tabIndex={showActions ? 0 : -1}
+                    onClick={() => setPendingDelete(false)}
+                    className="rounded-full border border-[var(--stroke)] px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:text-[var(--navy-dark)]"
+                    aria-label="Cancel delete"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    tabIndex={showActions ? 0 : -1}
+                    onClick={() => setEditing(true)}
+                    className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
+                    aria-label={`Edit ${card.title}`}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    tabIndex={showActions ? 0 : -1}
+                    onClick={() => setPendingDelete(true)}
+                    className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
+                    aria-label={`Delete ${card.title}`}
+                  >
+                    Remove
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

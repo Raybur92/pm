@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { api } from "@/lib/api";
+import type { BoardData } from "@/lib/kanban";
 
 type Message = {
   id: string;
@@ -11,10 +12,30 @@ type Message = {
 };
 
 type ChatSidebarProps = {
-  onBoardUpdated: () => void;
+  board: BoardData | null;
+  onBoardUpdated: (updates: Array<Record<string, unknown>>) => void;
 };
 
-export const ChatSidebar = ({ onBoardUpdated }: ChatSidebarProps) => {
+function getChips(board: BoardData | null): string[] {
+  if (!board || board.columns.length === 0) {
+    return [
+      "Create a card in Backlog",
+      "Move all Done cards to Backlog",
+      "Summarize what's in Review",
+    ];
+  }
+  const cols = board.columns;
+  const first = cols[0];
+  const nonEmpty = cols.find((c) => c.cardIds.length > 0);
+  const fullest = cols.reduce((a, b) => (b.cardIds.length > a.cardIds.length ? b : a), cols[0]);
+  return [
+    `Add a card to ${first.title}`,
+    nonEmpty ? `Summarize ${nonEmpty.title}` : `Summarize ${first.title}`,
+    fullest.cardIds.length > 0 ? `List all cards in ${fullest.title}` : "List all cards",
+  ];
+}
+
+export const ChatSidebar = ({ board, onBoardUpdated }: ChatSidebarProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +57,7 @@ export const ChatSidebar = ({ onBoardUpdated }: ChatSidebarProps) => {
       const result = await api.chat(text);
       setMessages((prev) => [...prev, { id: `${Date.now()}-assistant`, role: "assistant", content: result.response }]);
       if (result.applied_updates.length > 0) {
-        onBoardUpdated();
+        onBoardUpdated(result.applied_updates);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to get response");
@@ -93,11 +114,7 @@ export const ChatSidebar = ({ onBoardUpdated }: ChatSidebarProps) => {
               Ask me to create, move, or edit cards on your board.
             </p>
             <div className="flex flex-col gap-1.5">
-              {[
-                "Create a card in Backlog",
-                "Move all Done cards to Backlog",
-                "Summarize what's in Review",
-              ].map((s) => (
+              {getChips(board).map((s) => (
                 <button
                   key={s}
                   type="button"

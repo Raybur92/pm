@@ -56,7 +56,7 @@ export function LoginPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="user"
+                placeholder="Username"
                 className="w-full px-4 py-2 border border-[var(--stroke)] rounded-lg outline-none focus:border-[var(--primary-blue)] focus:ring-2 focus:ring-[var(--primary-blue)]/20 transition"
                 required
               />

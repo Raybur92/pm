@@ -13,6 +13,8 @@ type KanbanColumnProps = {
   column: Column;
   cards: Card[];
   isHighlighted?: boolean;
+  isFlashing?: boolean;
+  addCardShortcut?: number;
   onRename: (columnId: number, title: string) => void;
   onAddCard: (columnId: number, title: string, details: string) => void;
   onDeleteCard: (columnId: number, cardId: number) => void;
@@ -23,6 +25,8 @@ export const KanbanColumn = ({
   column,
   cards,
   isHighlighted,
+  isFlashing,
+  addCardShortcut,
   onRename,
   onAddCard,
   onDeleteCard,
@@ -33,6 +37,10 @@ export const KanbanColumn = ({
   const [isAddingCard, setIsAddingCard] = useState(false);
 
   useEffect(() => {
+    if (addCardShortcut) setIsAddingCard(true);
+  }, [addCardShortcut]);
+
+  useEffect(() => {
     setLocalTitle(column.title);
   }, [column.title]);
 
@@ -41,7 +49,8 @@ export const KanbanColumn = ({
       ref={setNodeRef}
       className={clsx(
         "flex min-h-[520px] flex-col rounded-3xl border border-[var(--stroke)] bg-[var(--surface-strong)] p-4 shadow-[var(--shadow)] transition",
-        (isHighlighted || isOver) && "ring-2 ring-[var(--accent-yellow)]"
+        (isHighlighted || isOver) && "ring-2 ring-[var(--accent-yellow)]",
+        isFlashing && "ring-2 ring-[var(--primary-blue)]"
       )}
       data-testid={`column-${column.id}`}
     >
@@ -61,24 +70,32 @@ export const KanbanColumn = ({
               + Add
             </button>
           </div>
-          <input
-            value={localTitle}
-            onChange={(e) => setLocalTitle(e.target.value)}
-            onBlur={() => {
-              const trimmed = localTitle.trim();
-              if (trimmed && trimmed !== column.title) {
-                onRename(column.id, trimmed);
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setLocalTitle(column.title);
-                e.currentTarget.blur();
-              }
-            }}
-            className="mt-3 w-full cursor-text bg-transparent font-display text-lg font-semibold text-[var(--navy-dark)] outline-none border-b border-transparent hover:border-[var(--stroke)] focus:border-[var(--primary-blue)] transition-colors"
-            aria-label={`Rename column ${column.title}`}
-          />
+          <div className="relative mt-3 group/rename">
+            <input
+              value={localTitle}
+              onChange={(e) => setLocalTitle(e.target.value)}
+              onBlur={() => {
+                const trimmed = localTitle.trim();
+                if (trimmed && trimmed !== column.title) {
+                  onRename(column.id, trimmed);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setLocalTitle(column.title);
+                  e.currentTarget.blur();
+                }
+              }}
+              className="w-full cursor-text bg-transparent font-display text-lg font-semibold text-[var(--navy-dark)] outline-none border-b border-transparent hover:border-[var(--stroke)] focus:border-[var(--primary-blue)] transition-colors pr-5"
+              aria-label={`Rename column ${column.title}`}
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 select-none text-xs text-[var(--gray-text)] opacity-0 group-hover/rename:opacity-100 transition-opacity duration-150"
+            >
+              ✎
+            </span>
+          </div>
         </div>
       </div>
       <div className="mt-4 flex flex-1 flex-col gap-3">
@@ -95,7 +112,7 @@ export const KanbanColumn = ({
         {cards.length === 0 && (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--stroke)] px-3 py-6 text-center">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">No cards yet</p>
-            <p className="text-xs text-[var(--gray-text)]">Add one below or drop a card here</p>
+            <p className="text-xs text-[var(--gray-text)]">Add one above or drop a card here</p>
           </div>
         )}
       </div>

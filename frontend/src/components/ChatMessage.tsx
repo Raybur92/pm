@@ -102,6 +102,7 @@ export const ChatMessage = ({ role, content }: ChatMessageProps) => {
     return (
       <div className="flex justify-end">
         <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[var(--secondary-purple)] px-4 py-2.5 text-sm text-white">
+          <span className="sr-only">You: </span>
           {content}
         </div>
       </div>
@@ -111,6 +112,7 @@ export const ChatMessage = ({ role, content }: ChatMessageProps) => {
   return (
     <div className="flex justify-start">
       <div className="max-w-[90%] rounded-2xl rounded-bl-sm border border-[var(--stroke)] bg-white px-4 py-3 text-sm text-[var(--navy-dark)] shadow-[0_4px_12px_rgba(3,33,71,0.06)]">
+        <span className="sr-only">Assistant: </span>
         <SimpleMarkdown content={content} />
       </div>
     </div>
