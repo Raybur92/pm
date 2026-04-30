@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
+  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
@@ -13,6 +14,7 @@ import {
   type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { KanbanColumn } from "@/components/KanbanColumn";
 import { KanbanCardPreview } from "@/components/KanbanCardPreview";
 import { ChatSidebar } from "@/components/ChatSidebar";
@@ -28,10 +30,27 @@ export const KanbanBoard = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeCardId, setActiveCardId] = useState<number | null>(null);
   const [overItemId, setOverItemId] = useState<number | string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
+
+  useEffect(() => {
+    if (!savedAt) return;
+    const t = setTimeout(() => setSavedAt(null), 2000);
+    return () => clearTimeout(t);
+  }, [savedAt]);
+
+  useEffect(() => {
+    if (!error) return;
+    const t = setTimeout(() => setError(null), 6000);
+    return () => clearTimeout(t);
+  }, [error]);
+
+  const markSaved = () => setSavedAt(Date.now());
 
   useEffect(() => {
     api
@@ -72,6 +91,7 @@ export const KanbanBoard = () => {
 
     try {
       await api.moveCard(cardId, targetCol.id, targetPosition);
+      markSaved();
     } catch (err: unknown) {
       setBoard(snapshot);
       setError(err instanceof Error ? err.message : "Failed to move card");
@@ -89,6 +109,7 @@ export const KanbanBoard = () => {
     });
     try {
       await api.renameColumn(columnId, title);
+      markSaved();
     } catch (err: unknown) {
       setBoard(snapshot);
       setError(err instanceof Error ? err.message : "Failed to rename column");
@@ -98,6 +119,7 @@ export const KanbanBoard = () => {
   const handleAddCard = async (columnId: number, title: string, details: string) => {
     try {
       const card = await api.createCard(columnId, title, details);
+      markSaved();
       setBoard((prev) =>
         prev
           ? {
@@ -135,13 +157,14 @@ export const KanbanBoard = () => {
     });
     try {
       await api.deleteCard(cardId);
+      markSaved();
     } catch (err: unknown) {
       setBoard(snapshot);
       setError(err instanceof Error ? err.message : "Failed to delete card");
     }
   };
 
-  const handleUpdateCard = async (columnId: number, cardId: number, title: string, details: string) => {
+  const handleUpdateCard = async (_columnId: number, cardId: number, title: string, details: string) => {
     if (!board) return;
     const snapshot = board;
     setBoard({
@@ -150,6 +173,7 @@ export const KanbanBoard = () => {
     });
     try {
       await api.updateCard(cardId, title, details);
+      markSaved();
     } catch (err: unknown) {
       setBoard(snapshot);
       setError(err instanceof Error ? err.message : "Failed to update card");
@@ -189,9 +213,11 @@ export const KanbanBoard = () => {
   const activeCard = activeCardId != null ? board.cards[activeCardId] : null;
 
   return (
-    <div className="relative overflow-hidden">
-      <div className="pointer-events-none absolute left-0 top-0 h-[420px] w-[420px] -translate-x-1/3 -translate-y-1/3 rounded-full bg-[radial-gradient(circle,_rgba(32,157,215,0.25)_0%,_rgba(32,157,215,0.05)_55%,_transparent_70%)]" />
-      <div className="pointer-events-none absolute bottom-0 right-0 h-[520px] w-[520px] translate-x-1/4 translate-y-1/4 rounded-full bg-[radial-gradient(circle,_rgba(117,57,145,0.18)_0%,_rgba(117,57,145,0.05)_55%,_transparent_75%)]" />
+    <>
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute left-0 top-0 h-[420px] w-[420px] -translate-x-1/3 -translate-y-1/3 rounded-full bg-[radial-gradient(circle,_rgba(32,157,215,0.25)_0%,_rgba(32,157,215,0.05)_55%,_transparent_70%)]" />
+        <div className="absolute bottom-0 right-0 h-[520px] w-[520px] translate-x-1/4 translate-y-1/4 rounded-full bg-[radial-gradient(circle,_rgba(117,57,145,0.18)_0%,_rgba(117,57,145,0.05)_55%,_transparent_75%)]" />
+      </div>
 
       {error && (
         <div
@@ -209,54 +235,39 @@ export const KanbanBoard = () => {
         </div>
       )}
 
-      <main className="relative mx-auto flex min-h-screen max-w-[1800px] flex-col gap-10 px-6 pb-16 pt-12">
-        <header className="flex flex-col gap-6 rounded-[32px] border border-[var(--stroke)] bg-white/80 p-8 shadow-[var(--shadow)] backdrop-blur">
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[var(--gray-text)]">
-                Single Board Kanban
-              </p>
-              <h1 className="mt-3 font-display text-4xl font-semibold text-[var(--navy-dark)]">
-                Kanban Studio
-              </h1>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--gray-text)]">
-                Keep momentum visible. Rename columns, drag cards between stages,
-                and capture quick notes without getting buried in settings.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3">
-              <div className="rounded-2xl border border-[var(--stroke)] bg-[var(--surface)] px-5 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[var(--gray-text)]">
-                  Focus
-                </p>
-                <p className="mt-2 text-lg font-semibold text-[var(--primary-blue)]">
-                  One board. Five columns. Zero clutter.
-                </p>
-              </div>
-              <button
-                onClick={handleLogout}
-                data-testid="logout-button"
-                aria-label="Sign out"
-                className="rounded-lg bg-[var(--secondary-purple)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
-              >
-                Sign Out
-              </button>
-            </div>
+      <main className="mx-auto flex max-w-[1800px] flex-col gap-8 px-6 pb-16 pt-8">
+        <header className="flex items-center justify-between rounded-2xl border border-[rgba(3,33,71,0.1)] border-t-4 border-t-[var(--accent-yellow)] bg-white px-6 py-5 shadow-[0_4px_20px_rgba(3,33,71,0.1)]">
+          <div className="flex items-center gap-4">
+            <h1 className="font-display text-xl font-semibold text-[var(--navy-dark)]">
+              Kanban Studio
+            </h1>
+            <span
+              aria-live="polite"
+              className={`text-xs text-[var(--gray-text)] transition-opacity duration-500 ${savedAt ? "opacity-100" : "opacity-0"}`}
+            >
+              Saved
+            </span>
           </div>
-          <div className="flex flex-wrap items-center gap-4">
-            {board.columns.map((column) => (
-              <div
-                key={column.id}
-                className="flex items-center gap-2 rounded-full border border-[var(--stroke)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--navy-dark)]"
-              >
-                <span className="h-2 w-2 rounded-full bg-[var(--accent-yellow)]" />
-                {column.title}
-              </div>
-            ))}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsChatOpen((v) => !v)}
+              aria-label="Toggle AI chat"
+              className="lg:hidden rounded-lg border border-[var(--stroke)] px-4 py-2 text-sm font-semibold text-[var(--navy-dark)] transition hover:bg-[var(--surface)]"
+            >
+              {isChatOpen ? "Hide Chat" : "Chat"}
+            </button>
+            <button
+              onClick={handleLogout}
+              data-testid="logout-button"
+              aria-label="Sign out"
+              className="rounded-lg bg-[var(--secondary-purple)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
+            >
+              Sign Out
+            </button>
           </div>
         </header>
 
-        <div className="flex items-start gap-6">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1 overflow-x-auto">
             <DndContext
               sensors={sensors}
@@ -291,9 +302,11 @@ export const KanbanBoard = () => {
               </DragOverlay>
             </DndContext>
           </div>
-          <ChatSidebar onBoardUpdated={refreshBoard} />
+          <div className={isChatOpen ? "block" : "hidden lg:block"}>
+            <ChatSidebar onBoardUpdated={refreshBoard} />
+          </div>
         </div>
       </main>
-    </div>
+    </>
   );
 };

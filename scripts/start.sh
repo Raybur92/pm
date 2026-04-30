@@ -17,12 +17,17 @@ fi
 echo "🔨 Building Docker image (Frontend + Backend)..."
 docker build -t pm-mvp:latest .
 
+# Ensure persistent data directory exists on the host
+mkdir -p "$PROJECT_DIR/data"
+
 # Run the container
 echo "🚀 Starting container on http://localhost:8000..."
 docker run -d \
     --name pm-mvp \
     -p 8000:8000 \
     --env-file .env \
+    -e DB_PATH=/app/data/kanban.db \
+    -v "$PROJECT_DIR/data:/app/data" \
     pm-mvp:latest
 
 echo "✓ Server started!"

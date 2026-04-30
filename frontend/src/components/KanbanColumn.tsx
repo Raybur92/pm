@@ -30,6 +30,7 @@ export const KanbanColumn = ({
 }: KanbanColumnProps) => {
   const { setNodeRef, isOver } = useDroppable({ id: toColumnDndId(column.id) });
   const [localTitle, setLocalTitle] = useState(column.title);
+  const [isAddingCard, setIsAddingCard] = useState(false);
 
   useEffect(() => {
     setLocalTitle(column.title);
@@ -51,6 +52,14 @@ export const KanbanColumn = ({
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
               {cards.length} cards
             </span>
+            <button
+              type="button"
+              onClick={() => setIsAddingCard(true)}
+              aria-label={`Add card to ${column.title}`}
+              className="ml-auto rounded-full border border-dashed border-[var(--stroke)] px-2 py-0.5 text-xs font-semibold text-[var(--primary-blue)] transition hover:border-[var(--primary-blue)]"
+            >
+              + Add
+            </button>
           </div>
           <input
             value={localTitle}
@@ -67,8 +76,8 @@ export const KanbanColumn = ({
                 e.currentTarget.blur();
               }
             }}
-            className="mt-3 w-full bg-transparent font-display text-lg font-semibold text-[var(--navy-dark)] outline-none"
-            aria-label="Column title"
+            className="mt-3 w-full cursor-text bg-transparent font-display text-lg font-semibold text-[var(--navy-dark)] outline-none border-b border-transparent hover:border-[var(--stroke)] focus:border-[var(--primary-blue)] transition-colors"
+            aria-label={`Rename column ${column.title}`}
           />
         </div>
       </div>
@@ -84,12 +93,15 @@ export const KanbanColumn = ({
           ))}
         </SortableContext>
         {cards.length === 0 && (
-          <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-[var(--stroke)] px-3 py-6 text-center text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">
-            Drop a card here
+          <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--stroke)] px-3 py-6 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--gray-text)]">No cards yet</p>
+            <p className="text-xs text-[var(--gray-text)]">Add one below or drop a card here</p>
           </div>
         )}
       </div>
       <NewCardForm
+        isOpen={isAddingCard}
+        onOpenChange={setIsAddingCard}
         onAdd={(title, details) => onAddCard(column.id, title, details)}
       />
     </section>

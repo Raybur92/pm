@@ -32,13 +32,13 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#209dd7] to-[#753991] px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[var(--primary-blue)] to-[var(--secondary-purple)] px-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h1 className="text-center text-3xl font-bold text-[#032147] mb-2">
+          <h1 className="text-center text-3xl font-bold text-[var(--navy-dark)] mb-2">
             Kanban Studio
           </h1>
-          <p className="text-center text-[#888888] text-sm mb-8">
+          <p className="text-center text-[var(--gray-text)] text-sm mb-8">
             Sign in to your project
           </p>
 
@@ -46,7 +46,7 @@ export function LoginPage() {
             <div>
               <label
                 htmlFor="username"
-                className="block text-sm font-medium text-[#032147] mb-2"
+                className="block text-sm font-medium text-[var(--navy-dark)] mb-2"
               >
                 Username
               </label>
@@ -57,7 +57,7 @@ export function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="user"
-                className="w-full px-4 py-2 border border-[#888888] rounded-lg outline-none focus:border-[#209dd7] focus:ring-2 focus:ring-[#209dd7]/20 transition"
+                className="w-full px-4 py-2 border border-[var(--stroke)] rounded-lg outline-none focus:border-[var(--primary-blue)] focus:ring-2 focus:ring-[var(--primary-blue)]/20 transition"
                 required
               />
             </div>
@@ -65,7 +65,7 @@ export function LoginPage() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-[#032147] mb-2"
+                className="block text-sm font-medium text-[var(--navy-dark)] mb-2"
               >
                 Password
               </label>
@@ -76,7 +76,7 @@ export function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-2 border border-[#888888] rounded-lg outline-none focus:border-[#209dd7] focus:ring-2 focus:ring-[#209dd7]/20 transition"
+                className="w-full px-4 py-2 border border-[var(--stroke)] rounded-lg outline-none focus:border-[var(--primary-blue)] focus:ring-2 focus:ring-[var(--primary-blue)]/20 transition"
                 required
               />
             </div>
@@ -94,15 +94,12 @@ export function LoginPage() {
               type="submit"
               disabled={isLoading}
               data-testid="login-button"
-              className="w-full bg-[#753991] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition"
+              className="w-full bg-[var(--secondary-purple)] hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition"
             >
               {isLoading ? "Signing in..." : "Sign In"}
             </button>
           </form>
 
-          <p className="text-center text-[#888888] text-xs mt-6">
-            Demo credentials: user / password
-          </p>
         </div>
       </div>
     </div>

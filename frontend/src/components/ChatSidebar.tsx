@@ -5,6 +5,7 @@ import { ChatMessage } from "@/components/ChatMessage";
 import { api } from "@/lib/api";
 
 type Message = {
+  id: string;
   role: "user" | "assistant";
   content: string;
 };
@@ -19,24 +20,21 @@ export const ChatSidebar = ({ onBoardUpdated }: ChatSidebarProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  const handleSubmit = async () => {
-    const text = input.trim();
+  const sendMessage = async (text: string) => {
     if (!text || isLoading) return;
-
-    const userMsg: Message = { role: "user", content: text };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { id: `${Date.now()}-user`, role: "user", content: text }]);
     setInput("");
     setIsLoading(true);
     setError(null);
-
     try {
       const result = await api.chat(text);
-      setMessages((prev) => [...prev, { role: "assistant", content: result.response }]);
+      setMessages((prev) => [...prev, { id: `${Date.now()}-assistant`, role: "assistant", content: result.response }]);
       if (result.applied_updates.length > 0) {
         onBoardUpdated();
       }
@@ -45,6 +43,18 @@ export const ChatSidebar = ({ onBoardUpdated }: ChatSidebarProps) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    const el = e.target;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
+  };
+
+  const handleSubmit = () => {
+    sendMessage(input.trim());
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -57,7 +67,7 @@ export const ChatSidebar = ({ onBoardUpdated }: ChatSidebarProps) => {
   return (
     <aside
       aria-label="AI Assistant"
-      className="flex w-[340px] flex-none flex-col self-start sticky top-6 rounded-[24px] border border-[var(--stroke)] bg-white/90 shadow-[var(--shadow)] backdrop-blur max-h-[calc(100vh-6rem)]"
+      className="flex w-full lg:w-[340px] flex-none flex-col self-start lg:sticky lg:top-6 rounded-[24px] border border-[var(--stroke)] bg-white/90 shadow-[var(--shadow)] backdrop-blur max-h-[calc(100vh-6rem)]"
     >
       <header className="flex-none border-b border-[var(--stroke)] px-5 py-4">
         <div className="flex items-center gap-2">
@@ -78,12 +88,30 @@ export const ChatSidebar = ({ onBoardUpdated }: ChatSidebarProps) => {
         className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4"
       >
         {messages.length === 0 && !isLoading && (
-          <p className="text-center text-xs text-[var(--gray-text)]">
-            Ask me to create, move, or edit cards on your board.
-          </p>
+          <div className="flex flex-col gap-3">
+            <p className="text-center text-xs text-[var(--gray-text)]">
+              Ask me to create, move, or edit cards on your board.
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {[
+                "Create a card in Backlog",
+                "Move all Done cards to Backlog",
+                "Summarize what's in Review",
+              ].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => sendMessage(s)}
+                  className="rounded-xl border border-[var(--stroke)] px-3 py-2 text-left text-xs text-[var(--navy-dark)] transition hover:border-[var(--primary-blue)] hover:bg-[var(--surface)]"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
-        {messages.map((msg, i) => (
-          <ChatMessage key={i} role={msg.role} content={msg.content} />
+        {messages.map((msg) => (
+          <ChatMessage key={msg.id} role={msg.role} content={msg.content} />
         ))}
         {isLoading && (
           <div className="flex justify-start" aria-label="AI is responding">
@@ -115,11 +143,12 @@ export const ChatSidebar = ({ onBoardUpdated }: ChatSidebarProps) => {
       <div className="flex-none border-t border-[var(--stroke)] p-4">
         <div className="flex gap-2">
           <textarea
+            ref={textareaRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder="Ask AI to manage your board..."
-            rows={2}
+            rows={1}
             disabled={isLoading}
             aria-label="Message input"
             className="flex-1 resize-none rounded-xl border border-[var(--stroke)] px-3 py-2 text-sm text-[var(--navy-dark)] outline-none placeholder:text-[var(--gray-text)] focus:ring-2 focus:ring-[var(--primary-blue)] disabled:opacity-50"

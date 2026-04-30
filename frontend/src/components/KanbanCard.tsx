@@ -16,6 +16,7 @@ export const KanbanCard = ({ card, onDelete, onUpdate }: KanbanCardProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: card.id });
   const [editing, setEditing] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(false);
   const [title, setTitle] = useState(card.title);
   const [details, setDetails] = useState(card.details);
 
@@ -47,7 +48,7 @@ export const KanbanCard = ({ card, onDelete, onUpdate }: KanbanCardProps) => {
       ref={setNodeRef}
       style={style}
       className={clsx(
-        "rounded-2xl border border-transparent bg-white px-4 py-4 shadow-[0_12px_24px_rgba(3,33,71,0.08)]",
+        "group rounded-2xl border border-transparent bg-white px-4 py-4 shadow-[0_12px_24px_rgba(3,33,71,0.08)]",
         "transition-all duration-150",
         isDragging && "opacity-60 shadow-[0_18px_32px_rgba(3,33,71,0.16)]"
       )}
@@ -99,23 +100,49 @@ export const KanbanCard = ({ card, onDelete, onUpdate }: KanbanCardProps) => {
               {card.details}
             </p>
           </div>
-          <div className="flex flex-col gap-1 shrink-0">
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
-              aria-label={`Edit ${card.title}`}
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(card.id)}
-              className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
-              aria-label={`Delete ${card.title}`}
-            >
-              Remove
-            </button>
+          <div className={clsx(
+            "flex flex-col gap-1 shrink-0 transition-opacity duration-150",
+            pendingDelete ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-within:opacity-100"
+          )}>
+            {pendingDelete ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onDelete(card.id)}
+                  className="rounded-full bg-red-500 px-2 py-1 text-xs font-semibold text-white transition hover:bg-red-600"
+                  aria-label={`Confirm delete ${card.title}`}
+                >
+                  Confirm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPendingDelete(false)}
+                  className="rounded-full border border-[var(--stroke)] px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:text-[var(--navy-dark)]"
+                  aria-label="Cancel delete"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
+                  aria-label={`Edit ${card.title}`}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPendingDelete(true)}
+                  className="rounded-full border border-transparent px-2 py-1 text-xs font-semibold text-[var(--gray-text)] transition hover:border-[var(--stroke)] hover:text-[var(--navy-dark)]"
+                  aria-label={`Delete ${card.title}`}
+                >
+                  Remove
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
