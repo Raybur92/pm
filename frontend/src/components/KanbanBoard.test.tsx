@@ -20,6 +20,8 @@ vi.mock("@/lib/api", () => ({
     createCard: vi.fn(),
     deleteCard: vi.fn().mockResolvedValue(undefined),
     moveCard: vi.fn().mockResolvedValue({}),
+    updateCard: vi.fn().mockResolvedValue({}),
+    chat: vi.fn().mockResolvedValue({ response: "", applied_updates: [] }),
   },
 }));
 

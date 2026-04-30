@@ -19,6 +19,11 @@ export type ApiBoard = {
   columns: ApiColumn[];
 };
 
+export type ChatResponse = {
+  response: string;
+  applied_updates: Array<Record<string, unknown>>;
+};
+
 function getToken(): string {
   if (typeof localStorage === "undefined") return "";
   return localStorage.getItem("auth_token") ?? "";
@@ -35,6 +40,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, { ...init, headers: jsonHeaders() });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      localStorage.removeItem("auth_token");
+      window.location.replace("/login");
+    }
     throw new Error((body as { detail?: string }).detail ?? `HTTP ${res.status}`);
   }
   if (res.status === 204) return undefined as unknown as T;
@@ -82,6 +91,16 @@ export const api = {
     return request(`/api/board/cards/${cardId}/move`, {
       method: "POST",
       body: JSON.stringify({ column_id: columnId, position }),
+    });
+  },
+
+  chat(
+    message: string,
+    history: Array<{ role: string; content: string }>,
+  ): Promise<ChatResponse> {
+    return request("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({ message, conversation_history: history }),
     });
   },
 };
