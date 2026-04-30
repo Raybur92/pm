@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.models.database import init_db
-from app.routers import auth, board
+from app.routers import ai, auth, board, chat
 
 
 @asynccontextmanager
@@ -18,6 +18,8 @@ app = FastAPI(title="Project Management MVP", version="0.1.0", lifespan=lifespan
 
 app.include_router(auth.router)
 app.include_router(board.router)
+app.include_router(ai.router)
+app.include_router(chat.router)
 
 
 @app.get("/health")

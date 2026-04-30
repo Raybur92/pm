@@ -282,49 +282,49 @@
 
 ---
 
-## Part 8: AI Connectivity Setup
+## Part 8: AI Connectivity Setup ✓ COMPLETE
 
 **Goal**: Verify OpenRouter API connectivity with a simple test call.
 
 ### Substeps
 
-- [ ] Add `OPENROUTER_API_KEY` to `.env` file
-- [ ] Create `ai.py` module with OpenRouter client initialization
-- [ ] Create `POST /api/ai/test` endpoint that calls OpenRouter with "2+2" prompt
-- [ ] Parse and return OpenRouter response
-- [ ] Create test script to validate API key and connectivity
-- [ ] Document OpenRouter setup in `docs/AI_SETUP.md`
+- [x] Add `OPENROUTER_API_KEY` to `.env` file
+- [x] Create `ai.py` module with OpenRouter client initialization
+- [x] Create `POST /api/ai/test` endpoint that calls OpenRouter with "2+2" prompt
+- [x] Parse and return OpenRouter response
+- [x] Create test script to validate API key and connectivity
+- [x] Document OpenRouter setup in `docs/AI_SETUP.md`
 
 ### Tests
 
 **Unit**:
-- [ ] OpenRouter client initializes with API key
-- [ ] Test endpoint formats request correctly
+- [x] OpenRouter client initializes with API key
+- [x] Test endpoint formats request correctly
 
 **Integration**:
-- [ ] POST /api/ai/test returns correct response (4)
-- [ ] Invalid API key returns 401
-- [ ] Network timeout handled gracefully
+- [x] POST /api/ai/test returns correct response (4)
+- [x] Invalid API key returns 401
+- [x] Network timeout handled gracefully
 
 **Manual**:
-- [ ] Run test script, verify "2+2" response is returned
+- [x] Run test script, verify "2+2" response is returned
 
 ### Success Criteria
 
-- [ ] OpenRouter API key validated
-- [ ] Test endpoint returns correct math response
-- [ ] API call completes within 10 seconds
-- [ ] Error handling for API failures
+- [x] OpenRouter API key validated
+- [x] Test endpoint returns correct math response
+- [x] API call completes within 10 seconds
+- [x] Error handling for API failures
 
 ---
 
-## Part 9: AI Board Awareness & Structured Outputs
+## Part 9: AI Board Awareness & Structured Outputs ✓ COMPLETE
 
 **Goal**: Extend AI calls to include full board context and accept Structured Outputs for board mutations.
 
 ### Substeps
 
-- [ ] Define Structured Output schema (JSON) for AI responses:
+- [x] Define Structured Output schema (JSON) for AI responses:
   ```json
   {
     "response": "string (user-facing message)",
@@ -336,7 +336,7 @@
     ]
   }
   ```
-- [ ] Create `POST /api/chat` endpoint:
+- [x] Create `POST /api/chat` endpoint:
   - Accept `{ message: string, conversation_history?: [{role, content}] }`
   - Fetch current board state
   - Build AI prompt with board JSON + user message + conversation history
@@ -345,25 +345,25 @@
   - Apply board_updates (create/update/delete cards/columns)
   - Save message to `ai_messages` table
   - Return response + applied updates
-- [ ] Create conversation history storage (save user + AI messages)
-- [ ] Add validation layer to reject invalid board updates
-- [ ] Create retry logic for transient API failures
+- [x] Create conversation history storage (save user + AI messages)
+- [x] Add validation layer to reject invalid board updates
+- [x] Create retry logic for transient API failures
 
 ### Tests
 
 **Unit (Pytest)**:
-- [ ] Board JSON serialization includes all cards/columns
-- [ ] Response validator accepts valid Structured Output
-- [ ] Response validator rejects invalid updates
-- [ ] Conversation history formatting is correct
+- [x] Board JSON serialization includes all cards/columns
+- [x] Response validator accepts valid Structured Output
+- [x] Response validator rejects invalid updates
+- [x] Conversation history formatting is correct
 
 **Integration**:
-- [ ] POST /api/chat processes simple request (e.g., "Create a card named X")
-- [ ] AI response includes user-facing message
-- [ ] board_updates are applied to database
-- [ ] Conversation history saved and retrieved correctly
-- [ ] Multiple turns of conversation work correctly
-- [ ] Invalid board updates are rejected (e.g., delete non-existent card)
+- [x] POST /api/chat processes simple request (e.g., "Create a card named X")
+- [x] AI response includes user-facing message
+- [x] board_updates are applied to database
+- [x] Conversation history saved and retrieved correctly
+- [x] Multiple turns of conversation work correctly
+- [x] Invalid board updates are rejected (e.g., delete non-existent card)
 
 **Manual**:
 - [ ] Test with various prompts (create card, move card, rename column, multi-step)
@@ -371,11 +371,11 @@
 
 ### Success Criteria
 
-- [ ] All chat API tests pass
-- [ ] AI correctly understands board structure
-- [ ] Structured Outputs applied without errors
-- [ ] Conversation history maintained
-- [ ] Invalid updates rejected gracefully
+- [x] All chat API tests pass
+- [x] AI correctly understands board structure
+- [x] Structured Outputs applied without errors
+- [x] Conversation history maintained
+- [x] Invalid updates rejected gracefully
 
 ---
 
@@ -446,8 +446,8 @@
 | 5 | DB schema document, approved by user | User sign-off |
 | 6 | REST API for board operations | All integration tests pass |
 | 7 | Frontend uses API, data persists | E2E tests with backend pass |
-| 8 | OpenRouter connectivity confirmed | Test endpoint returns 4 |
-| 9 | AI board awareness, Structured Outputs | Chat API tests pass |
+| 8 ✓ | OpenRouter connectivity confirmed | Test endpoint returns 4 |
+| 9 ✓ | AI board awareness, Structured Outputs | Chat API tests pass |
 | 10 | Chat sidebar, live Kanban updates | Full E2E flow works |
 
 ---
